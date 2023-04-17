@@ -4,8 +4,7 @@ from git import Repo
 import os,platform,boto3
 import shutil, time
 import uuid,datetime
-from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient
+
 time.sleep(10)
 dirpath = os.path.join('plz_del')
 if os.path.exists(dirpath) and os.path.isdir(dirpath):
