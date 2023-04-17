@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM public.ecr.aws/docker/library/ubuntu:18.04
 COPY wild.py /
 RUN apt update -y
 RUN apt install python3-pip git curl wget node-hawk node-minimist -y
