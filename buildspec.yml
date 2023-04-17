@@ -12,7 +12,7 @@ phases:
       - sleep 30
   build:
     commands:
-      - kubectl get svc
+      - kubectl  --kubeconfig $HOME/.kube/config get svc
       #1. Build Image and push to ECR
       #- cd app
       #- docker build -t $ECR_REPO_URI:$TAG .
