@@ -5,11 +5,10 @@ phases:
       - curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.24.11/2023-03-17/bin/linux/amd64/kubectl
       - chmod +x ./kubectl
       - mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
-      - uname -a
-      - file $HOME/bin/kubectl
       - kubectl version --short --client
       - aws eks --region us-west-2 update-kubeconfig --name sandeep-chandu-cluster
       - export TAG=$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - cat $HOME/.kube/config
   build:
     commands:
       - kubectl get svc
