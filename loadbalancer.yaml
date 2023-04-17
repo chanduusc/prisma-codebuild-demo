@@ -4,7 +4,7 @@ metadata:
   name: python-server-github-svc
 spec:
   selector:
-    app: python-server-github
+    app: python-server-app
   ports:
     - port: 80
       targetPort: 8080
