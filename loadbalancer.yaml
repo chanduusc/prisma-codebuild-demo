@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-server-github-svc
+spec:
+  selector:
+    app: python-server-github
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: LoadBalancer
