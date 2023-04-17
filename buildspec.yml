@@ -12,6 +12,8 @@ phases:
   build:
     commands:
       - kubectl get pods
+      - docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$TAG .
+      - docker push $ECR_REGISTRY/$ECR_REPOSITORY:$TAG
       #1. Build Image and push to ECR
       #- cd app
       #- docker build -t $ECR_REPO_URI:$TAG .
