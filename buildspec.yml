@@ -8,6 +8,7 @@ phases:
       - kubectl version --short --client
       - aws eks --region us-west-2 update-kubeconfig --name sandeep-chandu-cluster
       - export TAG=$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - cat $HOME/.kube/config
   build:
     commands:
       - kubectl get svc
