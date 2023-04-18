@@ -11,7 +11,7 @@ phases:
        - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY 
   install:
     runtime-versions:
-      python: 3.7
+      python: 3.9
     commands:
        - pip3 install checkov
        - echo Installing codebuild-extras...
