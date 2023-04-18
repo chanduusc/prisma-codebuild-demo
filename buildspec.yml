@@ -1,10 +1,22 @@
 version: 0.2
+env:
+  variables:
+      BC_SOURCE: "codebuild"
+      PRISMA_API_URL: "https://api2.prismacloud.io"
+  parameter-store:
+      BC_API_KEY: "bc-api-key"
 phases:
   pre_build:
     commands:
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY 
   install:
+    runtime-versions:
+      python: 3.7
     commands:
+       - pip3 install checkov
+       - echo Installing codebuild-extras...
+       - curl -fsSL https://raw.githubusercontent.com/bridgecrewio/aws-codebuild-extras/master/install >> extras.sh
+       - . ./extras.sh
       - curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.24.11/2023-03-17/bin/linux/amd64/kubectl
       - chmod +x ./kubectl
       - mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
@@ -20,10 +32,11 @@ phases:
       - docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$TAG .
       - docker push $ECR_REGISTRY/$ECR_REPOSITORY:$TAG
       - kubectl set image deployment/python-server-github python-server-app=$ECR_REGISTRY/$ECR_REPOSITORY:$TAG
-      #1. Build Image and push to ECR
-      #- cd app
-      #- docker build -t $ECR_REPO_URI:$TAG .
-      #- $(aws ecr get-login --no-include-email)
-      #- docker push $ECR_REPO_URI:$TAG
-      #2. deploy newer app
-      #- kubectl apply -f k8s/  
+      - pip3 uninstall -y aws-sam-cli
+      - checkov -d . --use-enforcement-rules --bc-api-key $BC_API_KEY --repo-id $CODEBUILD_ACCOUNT_ID/$CODEBUILD_PROJECT --branch $CODEBUILD_GIT_BRANCH -o cli -o junitxml --output-file-path console,test_results.xml
+reports:
+  prisma-cloud-infrastructure-security:
+    files:
+       - test_results.xml
+    discard-paths: yes
+    file-format: JunitXml
