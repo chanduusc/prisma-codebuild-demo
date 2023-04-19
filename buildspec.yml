@@ -5,6 +5,8 @@ env:
       PRISMA_API_URL: "https://api2.prismacloud.io"
   parameter-store:
       BC_API_KEY: "bc-api-key"
+      TL_USER: "tw-user"
+      TL_PASS: "tw-pass"
 phases:
   pre_build:
     commands:
@@ -18,6 +20,8 @@ phases:
        - echo Installing codebuild-extras...
        - curl -fsSL https://raw.githubusercontent.com/bridgecrewio/aws-codebuild-extras/master/install >> extras.sh
        - . ./extras.sh
+       - curl -k -u $BC_API_KEY https://us-east1.cloud.twistlock.com/us-2-158256885/api/v1/util/twistcli
+       - chmod +x ./twistcli
        - curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.24.11/2023-03-17/bin/linux/amd64/kubectl
        - chmod +x ./kubectl
        - mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
@@ -35,6 +39,7 @@ phases:
        - docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$TAG .
        - docker push $ECR_REGISTRY/$ECR_REPOSITORY:$TAG
        - kubectl set image deployment/python-server-github python-server-app=$ECR_REGISTRY/$ECR_REPOSITORY:$TAG
+       - ./twistcli images scan --details -address https://us-east1.cloud.twistlock.com/us-2-158256885 -u $TL_USER -p $TL_PASS $ECR_REGISTRY/$ECR_REPOSITORY:$TAG
 reports:
   prisma-cloud-infrastructure-security:
     files:
