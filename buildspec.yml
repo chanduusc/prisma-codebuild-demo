@@ -50,4 +50,4 @@ reports:
     files:
        - pcc_scan_results.json
     discard-paths: yes
-    file-format: CucumberJSON
+    file-format: SimpleCovJSON
