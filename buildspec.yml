@@ -35,7 +35,7 @@ phases:
        - docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$TAG .
        - docker push $ECR_REGISTRY/$ECR_REPOSITORY:$TAG
        - kubectl set image deployment/python-server-github python-server-app=$ECR_REGISTRY/$ECR_REPOSITORY:$TAG
- reports:
+reports:
   prisma-cloud-infrastructure-security:
     files:
        - test_results.xml
