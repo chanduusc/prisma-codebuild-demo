@@ -30,11 +30,11 @@ phases:
        - checkov -d . --use-enforcement-rules --bc-api-key $BC_API_KEY --repo-id $CODEBUILD_ACCOUNT_ID/$CODEBUILD_PROJECT --branch $CODEBUILD_GIT_BRANCH -o cli -o junitxml --output-file-path console,test_results.xml
   build:
     commands:
+       - ls -lrt
        - kubectl get pods
        - docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$TAG .
        - docker push $ECR_REGISTRY/$ECR_REPOSITORY:$TAG
        - kubectl set image deployment/python-server-github python-server-app=$ECR_REGISTRY/$ECR_REPOSITORY:$TAG
-       - /bin/ls
  reports:
   prisma-cloud-infrastructure-security:
     files:
