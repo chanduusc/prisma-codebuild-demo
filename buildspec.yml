@@ -20,7 +20,7 @@ phases:
        - echo Installing codebuild-extras...
        - curl -fsSL https://raw.githubusercontent.com/bridgecrewio/aws-codebuild-extras/master/install >> extras.sh
        - . ./extras.sh
-       - curl -k -u $BC_API_KEY https://us-east1.cloud.twistlock.com/us-2-158256885/api/v1/util/twistcli
+       - curl -k -u $TL_USER:$TL_PASS https://us-east1.cloud.twistlock.com/us-2-158256885/api/v1/util/twistcli
        - chmod +x ./twistcli
        - curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.24.11/2023-03-17/bin/linux/amd64/kubectl
        - chmod +x ./kubectl
