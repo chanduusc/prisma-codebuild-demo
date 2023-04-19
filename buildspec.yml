@@ -39,10 +39,15 @@ phases:
        - docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$TAG .
        - docker push $ECR_REGISTRY/$ECR_REPOSITORY:$TAG
        - kubectl set image deployment/python-server-github python-server-app=$ECR_REGISTRY/$ECR_REPOSITORY:$TAG
-       - ./twistcli images scan --details -address https://us-east1.cloud.twistlock.com/us-2-158256885 -u $TL_USER -p $TL_PASS $ECR_REGISTRY/$ECR_REPOSITORY:$TAG
+       - ./twistcli images scan --details -address https://us-east1.cloud.twistlock.com/us-2-158256885 -u $TL_USER -p $TL_PASS --output-file pcc_scan_results.json --details $ECR_REGISTRY/$ECR_REPOSITORY:$TAG
 reports:
   prisma-cloud-infrastructure-security:
     files:
        - test_results.xml
     discard-paths: yes
     file-format: JunitXml
+  prisma-cloud-image-security:
+    files:
+       - pcc_scan_results.json
+    discard-paths: yes
+    file-format: CucumberJSON
