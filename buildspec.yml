@@ -2,11 +2,13 @@ version: 0.2
 env:
   variables:
       BC_SOURCE: "codebuild"
-      PRISMA_API_URL: "https://api2.prismacloud.io"
+      ECR_REPO_PATH: "ECR_REPO_PATH"
   parameter-store:
       BC_API_KEY: "bc-api-key"
-      TL_USER: "tw-user"
-      TL_PASS: "tw-pass"
+      TL_USER: "tl_user"
+      TL_PASS: "tl_pass"
+      PRISMA_API_URL: "console_url"
+      PRISMA_COMPUTE_URL: "compute_url"
 phases:
   pre_build:
     commands:
@@ -36,10 +38,10 @@ phases:
     commands:
        - ls -lrt
        - kubectl get pods
-       - docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$TAG .
-       - ./twistcli images scan --details -address https://us-east1.cloud.twistlock.com/us-2-158256885 -u $TL_USER -p $TL_PASS --details $ECR_REGISTRY/$ECR_REPOSITORY:$TAG
-       - docker push $ECR_REGISTRY/$ECR_REPOSITORY:$TAG
-       - kubectl set image deployment/python-server-github python-server-app=$ECR_REGISTRY/$ECR_REPOSITORY:$TAG
+       - docker build -t $ECR_REPO_PATH:$TAG .
+       - ./twistcli images scan --details -address $PRISMA_COMPUTE_URL -u $TL_USER -p $TL_PASS --details $ECR_REPO_PATH:$TAG
+       - docker push $ECR_REPO_PATH:$TAG
+       - kubectl set image deployment/python-server-github python-server-app=$ECR_REPO_PATH:$TAG
       
 reports:
   prisma-cloud-infrastructure-security:
