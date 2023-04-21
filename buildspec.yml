@@ -7,7 +7,7 @@ env:
       BC_API_KEY: "bc-api-key"
       TL_USER: "tl_user"
       TL_PASS: "tl_pass"
-      PRISMA_API_URL: "console_url"
+      PRISMA_API_URL: "api_console_url"
       PRISMA_COMPUTE_URL: "compute_url"
 phases:
   pre_build:
@@ -28,7 +28,7 @@ phases:
        - chmod +x ./kubectl
        - mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$HOME/bin:$PATH
        - kubectl version --short --client
-       - aws eks --region us-west-2 update-kubeconfig --name sandeep-chandu-cluster
+       - aws eks --region us-west-2 update-kubeconfig --name 	prisma-eks
        - export TAG=$CODEBUILD_RESOLVED_SOURCE_VERSION
        - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2 &
        - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
