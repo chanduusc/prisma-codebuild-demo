@@ -1,0 +1,128 @@
+Parameters:
+  PrismaCloudAccessKeyID:
+    Type: String
+    Description: Access Key ID from Prisma Cloud ServiceRole
+    NoEcho: True
+  PrismaCloudSecretKey:
+    Type: String
+    Description: Secret Key from Prisma Cloud ServiceRole
+    NoEcho: True
+  PrismaCloudComputeURL:
+    Type: String
+    Description: URL from Compute e.g https://us-east1.cloud.twistlock.com/us-2-xxxxxxx
+    Default: "https://us-east1.cloud.twistlock.com/us-2-158256885"
+  PrismaCloudAPIURL:
+    Type: String
+    Description: URL from API e.g https://api.prismacloud.io
+    Default: "https://api2.prismacloud.io"
+  RegistryName:
+    Type: String
+    Description: Name of the ECR registry
+    Default: "vuln-infra"
+  GitHubUrl:
+    Type: String
+    Description: URL for GitHub repo i.e. https://github.com/username/repository
+    Default: "https://github.com/chanduusc/prisma-codebuild-demo"
+
+Resources:
+  AccessKeyParameter:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: Access Key ID 
+      Name: tl_user
+      Type: String
+      Value: !Ref PrismaCloudAccessKeyID
+  SecretKeyParameter:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: Secret Key
+      Name: tl_pass
+      Type: String
+      Value: !Ref PrismaCloudSecretKey
+  ComputeURLParameter:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: Compute URL
+      Name: compute_url
+      Type: String
+      Value: !Ref PrismaCloudComputeURL
+  APIConsoleURLParameter:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: Console URL
+      Name: api_console_url
+      Type: String
+      Value: !Ref PrismaCloudAPIURL
+  CodeSecurityCredentialsParameter:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      Description: Code Security Credentials
+      Name: bc-api-key
+      Type: String
+      Value: !Join [ '::', [!Ref PrismaCloudAccessKeyID, !Ref PrismaCloudSecretKey] ]
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CodeBuildRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+            - Effect: Allow
+              Principal:
+                  Service:
+                    - codebuild.amazonaws.com
+              Action:
+                - sts:AssumeRole
+      Description: !Sub "IAM Role for ${AWS::StackName}"
+      Path: '/'
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:*
+                  - codebuild:*
+                  - logs:*
+                  - SSM:*
+                  - ecr:*
+                  - eks:*
+                Resource: '*'
+  CodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Description: CodeBuild with GitHub webhook
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
+        PrivilegedMode: True
+        EnvironmentVariables:
+          - Name: PRISMA_API_URL
+            Value: !Ref PrismaCloudAPIURL
+            Type: PLAINTEXT
+          - Name: ECR_REPO_PATH
+            Value: !Join ['', [ !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/', !Ref RegistryName]]
+            Type: PLAINTEXT
+          - Name: ECR_REGISTRY 
+            Value: !Join ['', [ !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com']]
+            Type: PLAINTEXT
+
+      Source:
+        Type: GITHUB
+        Location: !Ref GitHubUrl
+      TimeoutInMinutes: 10
+  CodeBuildLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/codebuild/${CodeBuild}"
+      RetentionInDays: 7
+
+Outputs:
+  ProjectName:
+    Value: !Ref CodeBuild
+    Description: CodeBuild project name
