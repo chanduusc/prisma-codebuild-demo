@@ -1,0 +1,140 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: prisma-vpc
+  MySubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select 
+        - '0'
+        - !GetAZs ''
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: Name
+          Value: prisma-subnet1
+  MySubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select 
+        - '1'
+        - !GetAZs ''
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: Name
+          Value: prisma-subnet2
+  MyInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: prisma-internet-gateway
+  MyVPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId:
+        Ref: MyInternetGateway
+      VpcId:
+        Ref: MyVPC
+  MyRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: Name
+          Value: prisma-route-table
+  MyRoute:
+    Type: AWS::EC2::Route
+    DependsOn: MyVPCGatewayAttachment
+    Properties:
+      RouteTableId:
+        Ref: MyRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: MyInternetGateway
+  MySubnetRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: MyRouteTable
+      SubnetId:
+        Ref: MySubnet1
+  MySubnetRouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: MyRouteTable
+      SubnetId:
+        Ref: MySubnet2
+  MySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow inbound traffic to EKS worker nodes
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: Name
+          Value: prisma-security-group
+  MyECR:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: prisma-ecr
+  MyEKSRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: eks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+        - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+      Policies:
+        - PolicyName: "MyEKSRolePolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "eks:Describe*"
+                  - "eks:List*"
+                  - "eks:AccessKubernetesApi"
+                  - "ecr:*"
+                Resource: "*"
+  MyEKS:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: prisma-eks
+      RoleArn: !GetAtt MyEKSRole.Arn
+      Version: "1.24"
+      ResourcesVpcConfig:
+        SecurityGroupIds:
+          - !Ref MySecurityGroup
+        SubnetIds:
+          - !Ref MySubnet1
+          - !Ref MySubnet2
+      KubernetesNetworkConfig:
+        ServiceIpv4Cidr: "172.31.0.0/16"
+      Tags:
+        - Key: Name
+          Value: prisma-eks
