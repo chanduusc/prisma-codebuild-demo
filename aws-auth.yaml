@@ -1,0 +1,11 @@
+apiVersion: v1
+data:
+  mapRoles: |
+    - groups:
+        - system:masters
+      rolearn: arn:aws:iam::12345678:role/CodeBuildRole
+      username: CodeBuildRole
+kind: ConfigMap
+metadata:
+  name: aws-auth
+  namespace: kube-system
