@@ -1,9 +1,11 @@
-#/bin/bash
+#/bin/sh
 sudo apt-get update
 sudo apt-get install -y unzip jq
 AVAIL_ZONE=`curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone`
 REGION="`echo \"$AVAIL_ZONE\" | sed 's/[a-z]$//'`"
 ACC_ID=`curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .accountId`
+TAG_NAME="aws:cloudformation:stack-name"
+INSTANCE_ID="`wget -qO- http://instance-data/latest/meta-data/instance-id`"
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 unzip awscliv2.zip
 sudo ./aws/install  
@@ -19,3 +21,6 @@ sed -i 's/12345678/'"$ACC_ID"'/g' aws-auth.yaml
 kubectl apply -f aws-auth.yaml
 kubectl apply -f https://raw.githubusercontent.com/chanduusc/prisma-codebuild-demo/main/eks-deployment.yml
 kubectl apply -f https://raw.githubusercontent.com/chanduusc/prisma-codebuild-demo/main/loadbalancer.yaml
+TAG_VALUE="`aws ec2 describe-tags --filters "Name=resource-id,Values=$INSTANCE_ID" "Name=key,Values=$TAG_NAME" --region $REGION --output=text | cut -f5`"
+echo $TAG_VALUE
+aws cloudformation delete-stack --stack-name $TAG_VALUE
