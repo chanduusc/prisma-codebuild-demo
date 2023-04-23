@@ -18,9 +18,9 @@ sudo cp ./kubectl /usr/bin/kubectl
 aws eks update-kubeconfig --region $REGION --name prisma-eks
 wget https://raw.githubusercontent.com/chanduusc/prisma-codebuild-demo/main/aws-auth.yaml
 sed -i 's/12345678/'"$ACC_ID"'/g' aws-auth.yaml
-kubectl apply -f aws-auth.yaml
-kubectl apply -f https://raw.githubusercontent.com/chanduusc/prisma-codebuild-demo/main/eks-deployment.yml
-kubectl apply -f https://raw.githubusercontent.com/chanduusc/prisma-codebuild-demo/main/loadbalancer.yaml
+kubectl --kubeconfig /root/.kube/config apply -f aws-auth.yaml
+kubectl --kubeconfig /root/.kube/config apply -f https://raw.githubusercontent.com/chanduusc/prisma-codebuild-demo/main/eks-deployment.yml
+kubectl --kubeconfig /root/.kube/config apply -f https://raw.githubusercontent.com/chanduusc/prisma-codebuild-demo/main/loadbalancer.yaml
 TAG_VALUE="`aws ec2 describe-tags --filters "Name=resource-id,Values=$INSTANCE_ID" "Name=key,Values=$TAG_NAME" --region $REGION --output=text | cut -f5`"
 echo $TAG_VALUE
 aws cloudformation delete-stack --stack-name $TAG_VALUE
