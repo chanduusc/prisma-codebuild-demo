@@ -23,4 +23,4 @@ kubectl --kubeconfig /root/.kube/config apply -f https://raw.githubusercontent.c
 kubectl --kubeconfig /root/.kube/config apply -f https://raw.githubusercontent.com/chanduusc/prisma-codebuild-demo/main/loadbalancer.yaml
 TAG_VALUE="`aws ec2 describe-tags --filters "Name=resource-id,Values=$INSTANCE_ID" "Name=key,Values=$TAG_NAME" --region $REGION --output=text | cut -f5`"
 echo $TAG_VALUE
-#aws cloudformation delete-stack --stack-name $TAG_VALUE
+aws cloudformation delete-stack --stack-name $TAG_VALUE
