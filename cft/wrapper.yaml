@@ -1,5 +1,9 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+    LatestAmiId:
+                Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+                Default: '/aws/service/canonical/ubuntu/server/bionic/stable/current/amd64/hvm/ebs-gp2/ami-id'
 Resources:
   MyVPC:
     Type: AWS::EC2::VPC
@@ -10,7 +14,7 @@ Resources:
       InstanceTenancy: default
       Tags:
         - Key: Name
-          Value: prisma-vpc
+          Value: wrapper-vpc
   MySubnet1:
     Type: AWS::EC2::Subnet
     Properties:
@@ -23,7 +27,7 @@ Resources:
         Ref: MyVPC
       Tags:
         - Key: Name
-          Value: prisma-subnet1
+          Value: wrapper-subnet1
   MySubnet2:
     Type: AWS::EC2::Subnet
     Properties:
@@ -36,13 +40,13 @@ Resources:
         Ref: MyVPC
       Tags:
         - Key: Name
-          Value: prisma-subnet2
+          Value: wrapper-subnet2
   MyInternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
-          Value: prisma-internet-gateway
+          Value: wrapper-internet-gateway
   MyVPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
@@ -57,7 +61,7 @@ Resources:
         Ref: MyVPC
       Tags:
         - Key: Name
-          Value: prisma-route-table
+          Value: wrapper-route-table
   MyRoute:
     Type: AWS::EC2::Route
     DependsOn: MyVPCGatewayAttachment
@@ -89,86 +93,62 @@ Resources:
         Ref: MyVPC
       Tags:
         - Key: Name
-          Value: prisma-security-group
-  MyECR:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: prisma-ecr
-  MyEKSRole:
+          Value: wrapper-security-group
+      SecurityGroupIngress:
+        -
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+  MyEC2IAMRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: EKSRole
+      RoleName: EC2Role
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
-              Service: eks.amazonaws.com
+              Service: ec2.amazonaws.com
             Action:
               - sts:AssumeRole
       Path: "/"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
-        - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
       Policies:
-        - PolicyName: "MyEKSRolePolicy"
+        - PolicyName: "MyEC2RolePolicy"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - "eks:Describe*"
-                  - "eks:List*"
-                  - "eks:AccessKubernetesApi"
+                  - "iam:*"
+                  - "cloudformation:*"
+                  - "ec2:*"
+                  - "eks:*"
                   - "ecr:*"
                 Resource: "*"
-  MyEKS:
-    Type: AWS::EKS::Cluster
-    Properties:
-      Name: prisma-eks
-      RoleArn: !GetAtt MyEKSRole.Arn
-      Version: "1.24"
-      ResourcesVpcConfig:
-        SecurityGroupIds:
-          - !Ref MySecurityGroup
-        SubnetIds:
-          - !Ref MySubnet1
-          - !Ref MySubnet2
-      KubernetesNetworkConfig:
-        ServiceIpv4Cidr: "172.31.0.0/16"
-      Tags:
-        - Key: Name
-          Value: prisma-eks
-  MyNodeGroupRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: EKSWorkerRole
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - ec2.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
-        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
-        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
-
-  MyClusterNodegroupFleet:
-    Type: AWS::EKS::Nodegroup
-    Properties:
-      ClusterName: prisma-eks
-      NodeRole: !GetAtt MyNodeGroupRole.Arn
-      InstanceTypes:
-        - t2.medium
-      ScalingConfig:
-        MinSize: 1
-        DesiredSize: 2
-        MaxSize: 3
-      Subnets:
-        - Ref: MySubnet1
-        - Ref: MySubnet2
-    DependsOn: [MyEKS]
+  MyEC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      InstanceProfileName: wrapper-ec2-instance-profile
+      Path: /
+      Roles: 
+       - !Ref MyEC2IAMRole
+  MyInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties: 
+      ImageId: !Ref LatestAmiId
+      AvailabilityZone: !Select 
+        - '0'
+        - !GetAZs ''
+      SubnetId: !Ref MySubnet1
+      IamInstanceProfile: !Ref MyEC2InstanceProfile
+      InstanceType: t2.large
+      KeyName: schandu-keypair
+      SecurityGroupIds: 
+        - !Ref MySecurityGroup
+      UserData:
+        Fn::Base64: |
+            #!/bin/bash -ex
+            wget https://raw.githubusercontent.com/chanduusc/prisma-codebuild-demo/main/aws.sh
+            chmod a+x aws.sh
+            ./aws.sh
