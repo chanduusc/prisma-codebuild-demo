@@ -10,7 +10,7 @@ curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip
 unzip awscliv2.zip
 sudo ./aws/install  
 aws cloudformation create-stack --stack-name EKS --template-url https://pc-schandu.s3.amazonaws.com/eks.yaml --capabilities CAPABILITY_NAMED_IAM --region $REGION
-sleep 10
+sleep 30
 aws cloudformation wait stack-create-complete --stack-name EKS --region $REGION
 curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.24.11/2023-03-17/bin/linux/amd64/kubectl
 chmod +x ./kubectl
