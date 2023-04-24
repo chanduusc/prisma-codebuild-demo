@@ -10,17 +10,17 @@ dirpath = os.path.join('plz_del')
 if os.path.exists(dirpath) and os.path.isdir(dirpath):
     shutil.rmtree(dirpath)
 Repo.clone_from("https://github.com/chanduusc/malware.git", "plz_del")
-# unique_malware_filename =  str(uuid.uuid4().hex)+ '-' + str(datetime.datetime.now().time()).replace(':', '-').replace('.', '-')
-# unique_sensitive_filename =  str(uuid.uuid4().hex)+ '-' + str(datetime.datetime.now().time()).replace(':', '-').replace('.', '-') + '.docx'
-# unique_hipaa_filename =  str(uuid.uuid4().hex)+ '-' + str(datetime.datetime.now().time()).replace(':', '-').replace('.', '-') + '.csv'
-# cloud_provider = platform.uname()[2]
-# # if 'amzn' in cloud_provider:
-# #     s3 = boto3.resource('s3')
-# #     s3.meta.client.upload_file('/plz_del/FritzFrog/001eb377f0452060012124cb214f658754c7488ccb82e23ec56b2f45a636c859', 'cnappdemo' , unique_malware_filename)
-# #     s3.meta.client.upload_file('/plz_del/FritzFrog/10-MB-Test.docx', 'cnappdemo' , unique_sensitive_filename, ExtraArgs={'ACL':'public-read'})
-# #     s3.meta.client.upload_file('/plz_del/FritzFrog/clia-lab-search-results-02.22.2023-19_43_13.csv', 'cnappdemo' , unique_hipaa_filename, ExtraArgs={'ACL':'public-read'})
-# else:
-#     next
+unique_malware_filename =  str(uuid.uuid4().hex)+ '-' + str(datetime.datetime.now().time()).replace(':', '-').replace('.', '-')
+unique_sensitive_filename =  str(uuid.uuid4().hex)+ '-' + str(datetime.datetime.now().time()).replace(':', '-').replace('.', '-') + '.docx'
+unique_hipaa_filename =  str(uuid.uuid4().hex)+ '-' + str(datetime.datetime.now().time()).replace(':', '-').replace('.', '-') + '.csv'
+cloud_provider = platform.uname()[2]
+if 'amzn' in cloud_provider:
+    s3 = boto3.resource('s3')
+    s3.meta.client.upload_file('/plz_del/FritzFrog/001eb377f0452060012124cb214f658754c7488ccb82e23ec56b2f45a636c859', 'cnappdemo' , unique_malware_filename)
+    s3.meta.client.upload_file('/plz_del/FritzFrog/10-MB-Test.docx', 'cnappdemo' , unique_sensitive_filename, ExtraArgs={'ACL':'public-read'})
+    s3.meta.client.upload_file('/plz_del/FritzFrog/clia-lab-search-results-02.22.2023-19_43_13.csv', 'cnappdemo' , unique_hipaa_filename, ExtraArgs={'ACL':'public-read'})
+else:
+    next
 hostName = "0.0.0.0"
 serverPort = 8080
 class MyServer(BaseHTTPRequestHandler):
