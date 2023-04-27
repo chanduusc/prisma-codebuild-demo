@@ -101,7 +101,7 @@ Resources:
   CodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
-      Description: CodeBuild with GitHub webhook
+      Description: CodeBuild with GitHub
       ServiceRole: !GetAtt CodeBuildRole.Arn
       Artifacts:
         Type: NO_ARTIFACTS
