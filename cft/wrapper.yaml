@@ -151,4 +151,4 @@ Resources:
             #!/bin/bash -ex
             wget https://raw.githubusercontent.com/chanduusc/prisma-codebuild-demo/main/aws.sh
             chmod a+x aws.sh
-            ./aws-nodel.sh
+            ./aws.sh
