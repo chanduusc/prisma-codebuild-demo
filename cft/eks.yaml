@@ -1,15 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Resources:
-  S3Bucket:
-    Type: 'AWS::S3::Bucket'
-    Properties:
-      BucketName: !Join ['-', [ 'cnapppdemo',!Ref 'AWS::AccountId']]
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: false
-        BlockPublicPolicy: false
-        IgnorePublicAcls: false
-        RestrictPublicBuckets: false  
   MyVPC:
     Type: AWS::EC2::VPC
     Properties:
