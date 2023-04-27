@@ -25,6 +25,15 @@ Parameters:
     Default: "https://github.com/chanduusc/prisma-codebuild-demo"
 
 Resources:
+  S3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Join ['-', [ 'cnappdemo',!Ref 'AWS::AccountId']]
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false  
   AccessKeyParameter:
     Type: AWS::SSM::Parameter
     Properties: 
