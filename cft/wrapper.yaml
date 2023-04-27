@@ -143,7 +143,6 @@ Resources:
       SubnetId: !Ref MySubnet1
       IamInstanceProfile: !Ref MyEC2InstanceProfile
       InstanceType: t2.large
-      KeyName: schandu-keypair
       SecurityGroupIds: 
         - !Ref MySecurityGroup
       UserData:
