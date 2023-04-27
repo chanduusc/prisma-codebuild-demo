@@ -15,10 +15,6 @@ Parameters:
     Type: String
     Description: URL from API e.g https://api.prismacloud.io
     Default: "https://api2.prismacloud.io"
-  RegistryName:
-    Type: String
-    Description: Name of the ECR registry
-    Default: "vuln-infra"
   GitHubUrl:
     Type: String
     Description: URL for GitHub repo i.e. https://github.com/username/repository
@@ -118,7 +114,7 @@ Resources:
             Value: !Ref PrismaCloudAPIURL
             Type: PLAINTEXT
           - Name: ECR_REPO_PATH
-            Value: !Join ['', [ !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/', !Ref RegistryName]]
+            Value: !Join ['', [ !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/', 'prisma-ecr']]
             Type: PLAINTEXT
           - Name: ECR_REGISTRY 
             Value: !Join ['', [ !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com']]
