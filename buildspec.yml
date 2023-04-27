@@ -33,7 +33,7 @@ phases:
        - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2 &
        - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
        - pip3 uninstall -y aws-sam-cli
-       - checkov -d . --use-enforcement-rules --bc-api-key $BC_API_KEY --repo-id $CODEBUILD_ACCOUNT_ID/$CODEBUILD_PROJECT --branch $CODEBUILD_GIT_BRANCH -o cli -o junitxml --output-file-path console,test_results.xml
+       - checkov -d -s . --use-enforcement-rules --bc-api-key $BC_API_KEY --repo-id $CODEBUILD_ACCOUNT_ID/$CODEBUILD_PROJECT --branch $CODEBUILD_GIT_BRANCH -o cli -o junitxml --output-file-path console,test_results.xml
        - sed -i 's/cnappdemo/cnappdemo-'"$CODEBUILD_ACCOUNT_ID"'/g' wild.py
   build:
     commands:
