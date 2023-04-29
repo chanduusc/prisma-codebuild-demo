@@ -19,6 +19,9 @@ Parameters:
     Type: String
     Description: URL for GitHub repo i.e. https://github.com/username/repository
     Default: "https://github.com/chanduusc/prisma-codebuild-demo"
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/canonical/ubuntu/server/bionic/stable/current/amd64/hvm/ebs-gp2/ami-id'
 
 Resources:
   S3Bucket:
@@ -100,6 +103,7 @@ Resources:
   CodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
+      Name:  !Join ['-', [ 'CodeBuild', !Ref 'AWS::AccountId']]
       Description: CodeBuild with GitHub
       ServiceRole: !GetAtt CodeBuildRole.Arn
       Artifacts:
@@ -129,6 +133,153 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/codebuild/${CodeBuild}"
       RetentionInDays: 7
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: wrapper-vpc
+  MySubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select 
+        - '0'
+        - !GetAZs ''
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: Name
+          Value: wrapper-subnet1
+  MySubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select 
+        - '1'
+        - !GetAZs ''
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: Name
+          Value: wrapper-subnet2
+  MyInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: wrapper-internet-gateway
+  MyVPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId:
+        Ref: MyInternetGateway
+      VpcId:
+        Ref: MyVPC
+  MyRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: Name
+          Value: wrapper-route-table
+  MyRoute:
+    Type: AWS::EC2::Route
+    DependsOn: MyVPCGatewayAttachment
+    Properties:
+      RouteTableId:
+        Ref: MyRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: MyInternetGateway
+  MySubnetRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: MyRouteTable
+      SubnetId:
+        Ref: MySubnet1
+  MySubnetRouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: MyRouteTable
+      SubnetId:
+        Ref: MySubnet2
+  MySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow inbound traffic to EKS worker nodes
+      VpcId:
+        Ref: MyVPC
+      Tags:
+        - Key: Name
+          Value: wrapper-security-group
+      SecurityGroupIngress:
+        -
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+  MyEC2IAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: EC2Role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: "MyEC2RolePolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "iam:*"
+                  - "cloudformation:*"
+                  - "ec2:*"
+                  - "eks:*"
+                  - "ecr:*"
+                Resource: "*"
+  MyEC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      InstanceProfileName: wrapper-ec2-instance-profile
+      Path: /
+      Roles: 
+       - !Ref MyEC2IAMRole
+  MyInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties: 
+      ImageId: !Ref LatestAmiId
+      AvailabilityZone: !Select 
+        - '0'
+        - !GetAZs ''
+      SubnetId: !Ref MySubnet1
+      IamInstanceProfile: !Ref MyEC2InstanceProfile
+      InstanceType: t2.large
+      SecurityGroupIds: 
+        - !Ref MySecurityGroup
+      UserData:
+        Fn::Base64: |
+            #!/bin/bash -ex
+            wget https://raw.githubusercontent.com/chanduusc/prisma-codebuild-demo/main/aws-nodel.sh
+            chmod a+x aws-nodel.sh
+            ./aws-nodel.sh
+
 
 Outputs:
   ProjectName:
